@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 using word = unsigned int;
 using byte = unsigned char;
@@ -10,7 +11,7 @@ byte input[MESSAGE_SIZE];
 
 byte output[WORD_COUNT];
 
-word T[] = {
+word T[] = {0,
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
     0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
     0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -29,14 +30,18 @@ word T[] = {
     0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391,
 };
 
-void init_input(const char *s) {
-    int i = 0;
-    for (; i < 16; i++)
+void init_input(const std::string& s) {
+    size_t i = 0;
+    size_t input_size = s.size();
+    
+    for (; i < input_size; i++)
         input[i] = s[i];
     for (; i < MESSAGE_SIZE; i++)
         input[i] = 0;
-    input[16] = 128;
-    input[MESSAGE_SIZE - 8] = 16 * 8;
+    
+    input[input_size] = 128;
+    word *len = (word *)&input[MESSAGE_SIZE - 8];
+    *len = input_size * 8;
 }
 
 #define ROTATE_LEFT(x, n) \
@@ -81,7 +86,7 @@ void md5() {
             g = (7*i) % 16;
         }
         
-        F = F + A + X[g] + T[i]; 
+        F = F + A + X[g] + T[i + 1]; 
         A = D;
         D = C;
         C = B;
@@ -104,7 +109,7 @@ void print_output() {
 }
 
 int main() {
-    init_input("abcd1234abcd1234");
+    init_input("abcd");
     md5();
     print_output();
 
