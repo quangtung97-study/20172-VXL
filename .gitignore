@@ -1,0 +1,16 @@
+mid/*
+final/*
+
+final/exam/*
+final/delay/*
+
+!mid/include
+!final/exam
+!final/delay
+	
+!*.cpp
+!*.dsn
+!*.asm
+!*.uvproj
+!*.c
+!*.A51
