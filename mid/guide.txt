@@ -1,0 +1,4 @@
+install com0com
+open com port
+install putty
+setup "serial 19200 baurd rate comx comy"

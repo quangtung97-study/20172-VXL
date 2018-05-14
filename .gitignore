@@ -5,6 +5,8 @@ final/exam/*
 final/delay/*
 
 !mid/include
+!mid/guide.txt
+
 !final/exam
 !final/delay
 	
