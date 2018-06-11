@@ -3,15 +3,20 @@
 char twinkling = 0;
 char dark_cycle = 0;
 
-unsigned long start_counting_time = 0;
-unsigned long start_too_dry_time = 0;
+unsigned long start_water_dry_time = 0;
+unsigned long start_water_too_dry_time = 0;
 unsigned int max_time = 1;
-char is_too_dry = 0;
 
-enum State {
-	STATE_SHOWING,
-	STATE_SETTING
-} state = STATE_SHOWING;
+enum DisplayState {
+	DISPLAY_TIMER,
+	DISPLAY_SETTING
+} display_state = DISPLAY_TIMER;
+
+enum WaterState {
+	WATER_NORMAL,
+	WATER_DRY,
+	WATER_TOO_DRY
+} water_state = WATER_NORMAL;
 
 unsigned long counter0 = 0;
 unsigned long pressing_start;
@@ -35,12 +40,12 @@ void init() {
 	TR1 = 0;
 }
 
-unsigned int current_time() {
-	return (counter0 - start_counting_time) / 20;
+unsigned int current_dry_time() {
+	return (counter0 - start_water_dry_time) / 20;
 }
 
-unsigned int current_dry_time() {
-	return (counter0 - start_too_dry_time) / 20;
+unsigned int current_too_dry_time() {
+	return (counter0 - start_water_too_dry_time) / 20;
 }
 
 void start_beep() {
@@ -60,7 +65,7 @@ void too_dry() {
 }
 
 void short_pressing() {	
-	if (state == STATE_SHOWING) {
+	if (display_state == DISPLAY_TIMER) {
 		start_counting_time = counter0;
 		if (is_too_dry) {
 			is_too_dry = 0;
@@ -68,19 +73,19 @@ void short_pressing() {
 			twinkling--;
 		}
 	}
-	else if (state == STATE_SETTING) {
+	else if (display_state == DISPLAY_SETTING) {
 		max_time = (max_time) % 9 + 1;
 	}
 }
 
 void long_pressing() {
 	P2_1 = ~P2_1;
-	if (state == STATE_SHOWING)	{
-		state = STATE_SETTING;
+	if (display_state == DISPLAY_TIMER)	{
+		display_state = DISPLAY_SETTING;
 		twinkling++;
 	}
-	else if (state == STATE_SETTING) {
-		state = STATE_SHOWING;
+	else if (display_state == DISPLAY_SETTING) {
+		display_state = DISPLAY_TIMER;
 		twinkling--;
 	}
 }
@@ -132,12 +137,16 @@ void external0() interrupt 0 {
 	TR1 = 1;
 }
 
+void external1() interrupt 2 {
+	water_state = WATER_DRY;
+}
+
 void main() {
 	P2 = 0xff;
 	init();
 
 	while (1) {
-		if (state == STATE_SHOWING) {
+		if (display_state == DISPLAY_TIMER) {
 			if (!pressing)
 				if (!is_too_dry) 
 					show_number(current_time());
@@ -146,7 +155,7 @@ void main() {
 			else
 				show_empty();
 		}
-		else if (state == STATE_SETTING) {
+		else if (display_state == DISPLAY_SETTING) {
 			if (!pressing)
 				show_number(max_time);
 			else
