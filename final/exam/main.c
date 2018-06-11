@@ -30,6 +30,7 @@ void init() {
 	IP = 0x1A;	   // interrupt priorities
 
 	EX0 = 1;
+	EX1 = 1;
 
 	EA = 1;
 
@@ -57,8 +58,9 @@ void start_beep() {
 }
 
 void too_dry() {
-	start_too_dry_time = counter0;
-	is_too_dry = 1;
+	start_water_too_dry_time = counter0;
+	water_state = WATER_TOO_DRY;
+
 	P2_4 = 0;
 	twinkling++;
 	start_beep();
@@ -66,12 +68,12 @@ void too_dry() {
 
 void short_pressing() {	
 	if (display_state == DISPLAY_TIMER) {
-		start_counting_time = counter0;
-		if (is_too_dry) {
-			is_too_dry = 0;
+		if (water_state == WATER_TOO_DRY) {
 			P2_4 = 1;
 			twinkling--;
 		}
+		// tuoi nuoc
+		water_state = WATER_NORMAL;		
 	}
 	else if (display_state == DISPLAY_SETTING) {
 		max_time = (max_time) % 9 + 1;
@@ -99,7 +101,7 @@ void timer0() interrupt 1 {
 	if (counter0 % 10 == 0)
 		dark_cycle = ~dark_cycle & 0x1;
 
-	if (!is_too_dry && current_time() / 60 >= max_time)
+	if (water_state == WATER_DRY && current_dry_time() / 60 >= max_time)
 		too_dry();
 }
 
@@ -114,10 +116,11 @@ void timer1() interrupt 3 {
 		else
 			short_pressing();
 
-		if (is_too_dry)
+		if (water_state == WATER_TOO_DRY)
 			start_beep();
 	}
 	else {
+		// 2ms beep
 		TH1 = 0xF8;
 		TL1 = 0x30;
 		P1_5 = ~P1_5;
@@ -138,7 +141,10 @@ void external0() interrupt 0 {
 }
 
 void external1() interrupt 2 {
-	water_state = WATER_DRY;
+	if (water_state != WATER_DRY) {
+		water_state = WATER_DRY;
+		start_water_dry_time = counter0;
+	}
 }
 
 void main() {
@@ -147,11 +153,14 @@ void main() {
 
 	while (1) {
 		if (display_state == DISPLAY_TIMER) {
-			if (!pressing)
-				if (!is_too_dry) 
-					show_number(current_time());
-				else
+			if (!pressing) {
+				if (water_state == WATER_NORMAL)
+					show_number(0);
+				else if (water_state == WATER_DRY)
 					show_number(current_dry_time());
+				else if (water_state == WATER_TOO_DRY)
+					show_number(current_too_dry_time());
+			}
 			else
 				show_empty();
 		}
