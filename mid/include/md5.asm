@@ -1,16 +1,17 @@
-;---------------------------------------
-; void md5(input[64], binary_output[16], 
-;           output[32], T0, S0)
+;-----------------------------------------
+; void md5(input[64], length, 
+;  binary_output[16], output[32], T0, S0)
 md5 proc 
     push bp
     mov bp, sp
     sub sp, 48 
     
-    md5_input equ 4
-    md5_binary_output equ 6 
-    md5_output equ 8
-    md5_T0 equ 10
-    md5_S0 equ 12
+    md5_input equ 4    
+    md5_length equ 6
+    md5_binary_output equ 8 
+    md5_output equ 10
+    md5_T0 equ 12
+    md5_S0 equ 14
     
     md5_a equ -4
     md5_b equ -8
@@ -26,12 +27,35 @@ md5 proc
     md5_g equ -40  
     md5_i equ -42
     md5_tmp equ -46
-    md5_s equ -48  
+    md5_s equ -48     
     
-    ; init input
+    ; clear remain bytes                   
+    mov ax, md5_length[bp]
+    mov md5_i[bp], ax
+md5_clear_loop:    
+    cmp md5_i[bp], 64
+    jge md5_clear_loop_end
+    
+    mov ax, md5_i[bp]
     mov di, md5_input[bp]
-    mov 16[di], 0x80
-    mov 56[di], 128
+    add di, ax
+    mov [di], 0  
+        
+    inc md5_i[bp], 1
+    jmp md5_clear_loop     
+md5_clear_loop_end:
+    
+    ; append 10000000...
+    mov di, md5_input[bp] 
+    add di, md5_length[bp]
+    mov [di], 0x80  
+                         
+    ; length in bits
+    mov di, md5_input[bp]
+    mov ax, md5_length[bp]
+    shl ax, 3
+    mov 56[di], ax  
+    
     
     mov md5_a[bp], 2301h
     mov md5_a+2[bp], 6745h

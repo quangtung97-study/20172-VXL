@@ -71,7 +71,7 @@ data segment
     T63 DW 0d2bbh, 02ad7h
     T64 DW 0d391h, 0eb86h 
     
-    input DB "abcd7890dcba6789", 56 dup(0)  
+    input DB 64 dup(0)  
     binary_output DB 16 dup(?)
     output DB 33 dup(?)   
     
@@ -97,39 +97,53 @@ start:
     mov bp, sp 
     sub sp, 2
     
-    start_i equ -2  
+    start_length equ -2  
    
     call init_uart 
    
 main_repeat: 
     xor ax, ax
-    mov start_i[bp], ax
-main_loop_read: 
-    cmp start_i[bp], 16
-    jge main_loop_read_end
+    mov start_length[bp], ax    ; length = 0
     
+main_loop_read: 
     ; read character   
     push usart_data
     push usart_cmd    
     call usart_read
-    add sp, 4
+    add sp, 4      
+    
+    cmp al, 13
+    je main_loop_read_end   
+    
+    cmp al, 7fh      ;  delete
+    jne main_loop_read_end_if
+    dec start_length[bp]
+    
+    jmp main_loop_read_print
+    
+main_loop_read_end_if:
                
     ; copy value to input array
     lea dx, input
-    mov cx, start_i[bp]
+    mov cx, start_length[bp]
     add dx, cx
     mov di, dx
-    mov [di], al
+    mov [di], al   
     
+    ; length++
+    inc start_length[bp]   
+    
+main_loop_read_print:
+                    
+    ; print that character
     push usart_data
     push usart_cmd
     push ax
     call usart_pchar
     add sp, 6
-                 
-    inc start_i[bp]
+    
     jmp main_loop_read
-main_loop_read_end:    
+main_loop_read_end:        
      
     ; print carriage return
     push usart_data
@@ -145,7 +159,7 @@ main_loop_read_end:
     call usart_pchar
     add sp, 6  
           
-    ; md5(input, binary_output, output, s0) 
+    ; md5(input, length, binary_output, output, T0, s0) 
     lea ax, s0       
     push ax   
     lea ax, T1
@@ -154,10 +168,12 @@ main_loop_read_end:
     push ax      
     lea ax, binary_output
     push ax
+    mov ax, start_length[bp]
+    push ax
     lea ax, input
     push ax
     call md5
-    add sp, 10
+    add sp, 12
     
     push usart_data
     push usart_cmd                      
