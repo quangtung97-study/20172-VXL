@@ -9,6 +9,7 @@ final/delay/*
 !mid/figures
 
 !final/exam
+!final/figures
 	
 !*.cpp
 !*.dsn
