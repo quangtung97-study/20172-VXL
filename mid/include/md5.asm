@@ -1,17 +1,15 @@
 ;-----------------------------------------
 ; void md5(input[64], length, 
-;  binary_output[16], output[32], T0, S0)
+;  binary_output[16], output[32])
 md5 proc 
     push bp
     mov bp, sp
-    sub sp, 48 
+    sub sp, 48
     
     md5_input equ 4    
     md5_length equ 6
     md5_binary_output equ 8 
-    md5_output equ 10
-    md5_T0 equ 12
-    md5_S0 equ 14
+    md5_output equ 10      
     
     md5_a equ -4
     md5_b equ -8
@@ -156,10 +154,8 @@ md5_else1:
     mov bl, 5
     mul bl
     add ax, 1 
-    mov dx, 0
-    mov bx, 16
-    div bx         
-    mov md5_g[bp], dx 
+    and ax, 1111b         
+    mov md5_g[bp], ax 
             
     jmp md5_end_if
 md5_else2:
@@ -189,10 +185,8 @@ md5_else2:
     mov bl, 3
     mul bl
     add ax, 5 
-    mov dx, 0
-    mov bx, 16
-    div bx         
-    mov md5_g[bp], dx
+    and ax, 1111b         
+    mov md5_g[bp], ax
            
     jmp md5_end_if
 md5_else_final:
@@ -220,10 +214,8 @@ md5_else_final:
     mov ax, md5_i[bp]
     mov bl, 7
     mul bl 
-    mov dx, 0
-    mov bx, 16
-    div bx         
-    mov md5_g[bp], dx
+    and ax, 1111b         
+    mov md5_g[bp], ax
             
 md5_end_if: 
     ; (ax, bx) = F + A
@@ -246,8 +238,8 @@ md5_end_if:
     add ax, cx
     adc bx, dx
     
-    ; (ax, bx) = (ax, bx) + T1[i]
-    mov cx, md5_T0[bp]
+    ; (ax, bx) = (ax, bx) + T0[i]
+    lea cx, T0
     mov dx, md5_i[bp]
     shl dx, 2
     add cx, dx
@@ -280,28 +272,22 @@ md5_end_if:
     mov md5_c[bp], ax
     mov md5_c+2[bp], bx
     
-    ; s = s0[(i / 16) * 4 + i % 4] 
-    mov cx, md5_s0[bp]
+    ; s = S0[(i / 16) * 4 + i % 4] 
+    lea cx, S0 
     mov ax, md5_i[bp]
-    mov dx, 0
-    mov bx, 16
-    div bx         ; ax = i / 16
-    mov bl, 4
-    mul bl         ; ax = al * 4 
-    mov md5_tmp[bp], ax    ; tmp = ax
-    mov ax, md5_i[bp]
-    mov dx, 0
-    mov bx, 4
-    div bx          ; dx = i % 4
-    
-    mov ax, md5_tmp[bp]
-    add ax, dx      ; ax = (i/16) * 4 + i%4
+    shr ax, 4
+    shl ax, 2
     add cx, ax
-    mov di, cx 
+    
+    mov ax, md5_i[bp]
+    and ax, 11b
+    add cx, ax
+    mov di, cx
     
     xor ax, ax       
     mov al, [di]
     mov md5_s[bp], ax      ; store s
+    
     
     mov ax, md5_F[bp]
     mov bx, md5_F+2[bp]
@@ -469,4 +455,4 @@ co_end_loop:
     pop bp
     ret
 compute_output endp            
-;-------------------------------
+;-------------------------------     
