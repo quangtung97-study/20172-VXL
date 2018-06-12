@@ -6,9 +6,9 @@ final/delay/*
 
 !mid/include
 !mid/guide.txt
+!mid/figures
 
 !final/exam
-!final/delay
 	
 !*.cpp
 !*.dsn
